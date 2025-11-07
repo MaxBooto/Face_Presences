@@ -16,7 +16,7 @@ MYSQL_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': '',
-    'database': 'jeremie',
+    'database': 'qrface',
     'raise_on_warnings': True,
     'consume_results': True
 }
@@ -659,4 +659,5 @@ def export_history():
 
 if __name__ == '__main__':
     init_neural_network()
+
     app.run(host='0.0.0.0', port=5000, debug=True)

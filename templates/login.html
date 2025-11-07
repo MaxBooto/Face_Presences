@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e2a44 0%, #2c3e50 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #00aaff;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .btn-primary {
+            background: #00aaff;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background: #0088cc;
+            transform: translateY(-2px);
+        }
+        .table-container {
+            background: #2a3b5e;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        .message, .error {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .message {
+            background: #28a745;
+        }
+        .error {
+            background: #ff4444;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            background: #3a4b6e;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        .form-group input:focus {
+            outline: none;
+            box-shadow: 0 0 5px #00aaff;
+        }
+        .btn-primary {
+            width: 100%;
+        }
+        .signup-link {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #00aaff;
+            margin-top: 1rem;
+        }
+        .signup-link a {
+            color: #00aaff;
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+        .signup-link a:hover {
+            color: #0088cc;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connexion Administrateur</h1>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <div class="table-container">
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email :</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Mot de passe :</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Se connecter</button>
+                <div class="signup-link">
+                    Pas de compte ? <a href="/create_admin">Créez-en un</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData)
+                });
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                } else {
+                    const result = await response.json();
+                    showMessage(result.error || 'Erreur de connexion', false);
+                }
+            } catch (error) {
+                showMessage('Erreur réseau lors de la connexion', false);
+                console.error('Erreur:', error);
+            }
+        });
+        function showMessage(message, isSuccess) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isSuccess ? 'message' : 'error';
+            messageDiv.textContent = message;
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, document.querySelector('.table-container'));
+            setTimeout(() => messageDiv.remove(), 3000);
+        }
+    </script>
+</body>
+</html>

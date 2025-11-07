@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconnaissance Neuronale</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e2a44 0%, #2c3e50 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .navbar {
+            background: #141c2f;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .navbar a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+        .navbar a:hover {
+            background: #2a3b5e;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #00aaff;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .btn-primary {
+            background: #00aaff;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background: #0088cc;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #ff4444;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background: #cc3333;
+            transform: translateY(-2px);
+        }
+        .table-container {
+            background: #2a3b5e;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #3a4b6e;
+        }
+        th {
+            background: #1e2a44;
+            font-weight: 500;
+        }
+        .message, .error {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .message {
+            background: #28a745;
+        }
+        .error {
+            background: #ff4444;
+        }
+        .video-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        #video-feed {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/logout">Déconnexion</a>
+    </div>
+    <div class="container">
+        <h1>Reconnaissance Neuronale en Temps Réel</h1>
+        <div class="table-container">
+            <div class="video-container">
+                <img id="video-feed" src="/video_feed" alt="Flux vidéo">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="clearPresence()">Vider la Liste</button>
+                <button class="btn btn-primary" onclick="exportPresence()">Exporter en Excel</button>
+            </div>
+            <table id="presence-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Nom</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        async function fetchPresenceList() {
+            try {
+                const response = await fetch('/presence_list');
+                const data = await response.json();
+                const tbody = document.querySelector('#presence-table tbody');
+                tbody.innerHTML = '';
+                if (Array.isArray(data)) {
+                    data.forEach(presence => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${presence.date}</td>
+                            <td>${presence.heure}</td>
+                            <td>${presence.nom}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                showMessage('Erreur lors de la récupération des présences', false);
+                console.error('Erreur:', error);
+            }
+        }
+        async function clearPresence() {
+            try {
+                const response = await fetch('/clear_presence', { method: 'DELETE' });
+                const result = await response.json();
+                showMessage(result.message || 'Erreur lors de la suppression', result.success);
+                if (result.success) fetchPresenceList();
+            } catch (error) {
+                showMessage('Erreur réseau lors de la suppression', false);
+                console.error('Erreur:', error);
+            }
+        }
+        async function exportPresence() {
+            try {
+                const today = new Date().toLocaleDateString('fr-FR');
+                const response = await fetch('/export_presence', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: today })
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `presences_${today.replace(/\//g, '-')}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    showMessage('Exportation réussie', true);
+                } else {
+                    const result = await response.json();
+                    showMessage(result.message || 'Erreur lors de l’exportation', false);
+                }
+            } catch (error) {
+                showMessage('Erreur réseau lors de l’exportation', false);
+                console.error('Erreur:', error);
+            }
+        }
+        function showMessage(message, isSuccess) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isSuccess ? 'message' : 'error';
+            messageDiv.textContent = message;
+            const container = document.querySelector('.container');
+            container.insertBefore(messageDiv, document.querySelector('.table-container'));
+            setTimeout(() => messageDiv.remove(), 3000);
+        }
+        fetchPresenceList();
+        setInterval(fetchPresenceList, 5000);
+    </script>
+</body>
+</html>
